@@ -13,16 +13,17 @@ format = '%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s: %(message)s'
 logging.basicConfig(level=logging.INFO, format=format)
 
 
-def handle(buffer, direction, src_address, src_port, dst_address, dst_port) -> bytes:
+def handle(buffer, direction, src_address, src_port, dst_address, dst_port,key) -> bytes:
     if direction:
-        bydata=rot_enc(key)(buffer.decode()).encode()
+        bydata = rot_enc(key)(buffer.decode()).encode()
         logging.debug(f"{src_address, src_port} -> {dst_address, dst_port} {len(buffer)} bytes")
+        return f"{src_address[0]}: {bydata.decode()}\n".encode()
     else:
-        bydata=rot_dec(-key)(buffer.decode()).encode()
+        bydata = rot_dec(-key)(buffer.decode()).encode()
         logging.debug(f"{src_address, src_port} <- {dst_address, dst_port} {len(bydata)} bytes")
-    return bydata.decode()
+        return f"{dst_address[0]}: {bydata.decode()}\n".encode()
 
-def transfer(src, dst, direction):
+def transfer(src, dst, direction,key):
     src_address, src_port = src.getsockname()
     dst_address, dst_port = dst.getsockname()
     while True:
@@ -30,7 +31,9 @@ def transfer(src, dst, direction):
             buffer = src.recv(1024)
             if len(buffer) == 0:
                 break
-            dst.send(handle(buffer, direction, src_address, src_port, dst_address, dst_port))
+            output = handle(buffer, direction, src_address, src_port, dst_address, dst_port,key)
+            print(output.decode(), end='')
+            dst.send(output)
         except Exception as e:
             logging.error(repr(e))
             break

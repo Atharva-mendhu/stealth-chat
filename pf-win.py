@@ -22,15 +22,17 @@ def handle(buffer, direction, src_address, src_port, dst_address, dst_port) -> b
         logging.debug(f"{src_address, src_port} <- {dst_address, dst_port} {len(buffer)} bytes")
     return bydata.decode()
 
-def transfer(src, dst, direction):
+def transfer(src, dst, direction, key):
     src_address, src_port = src.getsockname()
     dst_address, dst_port = dst.getsockname()
     while True:
         try:
-            buffer = src.recv(4096)
+            buffer = src.recv(1024)
             if len(buffer) == 0:
                 break
-            dst.send(handle(buffer, direction, src_address, src_port, dst_address, dst_port))
+            output = handle(buffer, direction, src_address, src_port, dst_address, dst_port, key)
+            print(output.decode(), end='')
+            dst.send(output)
         except Exception as e:
             logging.error(repr(e))
             break
@@ -64,7 +66,7 @@ def server(local_host, local_port, remote_host, remote_port):
 
 def main():
     #server(listen_host, listen_port, connect_host, connect_port)
-    server("127.0.0.1", 4444, "127.0.0.1", 6666)
+    server("127.0.0.1", 5555, "127.0.0.1", 7777)
 
 
 if __name__ == "__main__":
